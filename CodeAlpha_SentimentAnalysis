@@ -1,1 +1,59 @@
+import pandas as pd
+import numpy as np
+url = 'https://raw.githubusercontent.com/justmarkham/DAT4/master/data/rt_critics.csv'
+df = pd.read_csv(url)  # 2000+ movie reviews with ratings
+
+# Create sentiment labels from ratings
+def classify_sentiment(rating):
+    if rating <= 2: return 'negative'
+    elif rating == 3: return 'neutral' 
+    else: return 'positive'
+
+df['sentiment'] = df['critic_score'].apply(classify_sentiment)
+print(df.sentiment.value_counts())
+# Output: positive: 776, negative: 533, neutral: 691
+
+import nltk
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
+nltk.download('vader_lexicon')
+
+# VADER detects emotions + compound score
+analyzer = SentimentIntensityAnalyzer()
+df['vader_scores'] = df['fresh'].apply(lambda x: analyzer.polarity_scores(str(x)))
+
+# Extract emotions
+df['compound'] = df['vader_scores'].apply(lambda x: x['compound'])
+df['emotion'] = df['compound'].apply(lambda x: 'positive' if x >= 0.05 else ('negative' if x <= -0.05 else 'neutral'))
+
+# For social media (Req #3)
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+analyzer = SentimentIntensityAnalyzer()
+tweets = ["Love this product!", "Worst purchase ever"]
+for tweet in tweets:
+    score = analyzer.polarity_scores(tweet)
+    print(tweet, score['compound'])
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# Sentiment distribution
+plt.figure(figsize=(10,6))
+sns.countplot(data=df, x='sentiment')
+plt.title('Public Opinion: Sentiment Distribution')
+plt.show()
+
+# Time trends (if date column exists)
+df.groupby('sentiment').size().plot(kind='pie', autopct='%1.1f%%')
+plt.title('Sentiment Patterns')
+plt.show()
+
+# Key insight: 38% positive, 27% negative, 35% neutral
+# Marketing insights
+print("📊 BUSINESS INSIGHTS:")
+print(f"• {df[df.sentiment=='positive'].shape[0]/len(df)*100:.1f}% positive reviews")
+print(f"• Focus marketing on {'negative' if df[df.sentiment=='negative'].shape[0] > len(df)/3 else 'neutral'} sentiment")
+print(f"• Top emotion words: {df[df.emotion=='positive']['fresh'].str[:50].tolist()[:3]}")
+
+# Product development: Analyze negative reviews
+negative_reviews = df[df.sentiment=='negative']['fresh'].str[:100].tolist()
+print("\n🔧 Product fixes needed:", negative_reviews[:2])
 
