@@ -1,0 +1,77 @@
+from sklearn.datasets import load_iris
+import pandas as pd
+
+# Load directly from sklearn
+iris = load_iris()
+df = pd.DataFrame(iris.data, columns=iris.feature_names)
+df['species'] = pd.Categorical.from_codes(iris.target, iris.target_names)
+
+print("Dataset loaded:", df.shape)
+print(df.head())
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.datasets import load_iris
+from scipy import stats
+import warnings; warnings.filterwarnings('ignore')
+
+iris = load_iris()
+df = pd.DataFrame(iris.data, columns=iris.feature_names)
+df['species'] = pd.Categorical.from_codes(iris.target, iris.target_names)
+
+print(df.info())  # Data types: 4 float64, 1 category; 150 entries
+print(df.head())  # Preview rows
+print(df.shape)   # (150, 5)
+print(df.dtypes)  # Variables: sepal_length (cm), etc.
+
+# Univariate: Trends/distributions
+df.describe()  # Means: sepal_length=5.84; patterns in mins/maxes
+sns.pairplot(df, hue='species')  # Patterns: clear species clusters in petals
+plt.show()
+
+# Correlations: High petal trend (0.96)
+print(df.corr(numeric_only=True))
+
+# Anomalies: Boxplots reveal outliers (e.g., versicolor sepal_length>7)
+sns.boxplot(data=df)
+plt.show()
+
+# ANOVA test
+setosa = df[df.species=='setosa']['petal length (cm)']
+versicolor = df[df.species=='versicolor']['petal length (cm)']
+virginica = df[df.species=='virginica']['petal length (cm)']
+f_stat, p_val = stats.f_oneway(setosa, versicolor, virginica)
+print(f'ANOVA p-value: {p_val}')  # <0.001: Reject H0 (differences exist)
+
+# Normality assumption (Shapiro)
+print(stats.shapiro(df['sepal length (cm)']))  # p>0.05? Normal if true
+
+# Visualize hypothesis
+sns.boxplot(x='species', y='petal length (cm)', data=df)
+plt.title('Petal Length by Species')
+plt.show()
+
+import numpy as np
+import pandas as pd
+
+# Your existing checks (already worked)
+print(df.isnull().sum())  # All 0
+print(df.duplicated().sum())  # 0 or 1
+print(df['species'].value_counts())  # Balanced 50 each
+
+# Fixed IQR for numerics only
+numeric_df = df.select_dtypes(include=np.number)  # Exclude 'species'
+Q1 = numeric_df.quantile(0.25)
+Q3 = numeric_df.quantile(0.75)
+IQR = Q3 - Q1
+outliers = ((numeric_df < (Q1 - 1.5 * IQR)) | (numeric_df > (Q3 + 1.5 * IQR))).sum()
+print('Outliers per feature:\n', outliers)
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+sns.boxplot(data=df)
+plt.title('Outliers in Iris Dataset')
+plt.show()
